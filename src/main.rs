@@ -1,7 +1,7 @@
 use std::sync::{Arc, Mutex};
 
 use axum::{
-    Json, Router, extract::State, response::IntoResponse, routing::get
+    Json, Router, extract::{State}, response::IntoResponse, routing::get
 };
 use serde::Serialize;
 
@@ -22,6 +22,10 @@ enum Status {
     Soon,
 }
 
+struct PostBooks {
+    title: String,
+    status: Status,
+}
 
 
 #[axum::debug_handler]
@@ -29,6 +33,8 @@ async fn get_books(State(books): State<Books>) -> impl IntoResponse {
     let book_lock = books.lock().unwrap();
     Json(book_lock.clone())
 }
+
+async fn post_books_handler(State(books): State<Books>, Json(payload): Json<PostBooks>) {}
 
 #[tokio::main]
 async fn main() {
