@@ -44,9 +44,9 @@ impl IntoResponse for AppError {
 
 
 #[axum::debug_handler]
-async fn get_books(State(books): State<Books>) -> impl IntoResponse {
+async fn get_books(State(books): State<Books>) -> Result<impl IntoResponse, AppError> {
     let book_lock = books.lock().unwrap();
-    Json(book_lock.clone())
+    Ok(Json(book_lock.clone()))
 }
 
 #[axum::debug_handler]
