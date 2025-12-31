@@ -1,7 +1,7 @@
 use std::sync::{Arc, Mutex};
 
 use axum::{
-    Error, Json, Router, extract::State, response::IntoResponse, routing::get
+    Json, Router, extract::State, http::StatusCode, response::IntoResponse, routing::get
 };
 use serde::{Deserialize, Serialize};
 
@@ -28,6 +28,20 @@ struct PostBooks {
     status: Status,
 }
 
+enum AppError {
+    Validation(String),
+    ServerError(String),
+}
+
+impl IntoResponse for AppError {
+    fn into_response(self) -> axum::response::Response {
+        match self {
+            AppError::ServerError(msg) => (StatusCode::INTERNAL_SERVER_ERROR, Json( msg )).into_response(),
+            AppError::Validation(msg) => (StatusCode::BAD_REQUEST, Json( msg)).into_response(),
+        }
+    }
+}
+
 
 #[axum::debug_handler]
 async fn get_books(State(books): State<Books>) -> impl IntoResponse {
@@ -37,16 +51,34 @@ async fn get_books(State(books): State<Books>) -> impl IntoResponse {
 
 #[axum::debug_handler]
 async fn post_book_handler(State(books): State<Books>, Json(payload): Json<PostBooks>) -> Json<Book> {
+    // let maybe_input = validate_input(&payload.title);
+    
+
+    
     let mut book_lock = books.lock().unwrap();
     let book_id = book_lock.len() + 1;
     let new_book = Book {
         id: book_id,
+        // TODO add a match and replace this part after adding error handling
         title: payload.title,
         status: payload.status,
     };
 
     book_lock.push(new_book.clone());
     Json(new_book)
+}
+
+async fn validate_input(title: &str) -> Result<&str, ()>{
+    let trimmed_title = title.trim();
+    if trimmed_title.len() == 0 {
+        return Err({})
+    }
+    
+    Ok(trimmed_title)
+}
+
+async fn lock_books() {
+
 }
 
 #[tokio::main]
